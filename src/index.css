@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+body {
+    /* background-color: #1D1D1D; */
+    background-color: #FFFFFF;
+}
+
+
+/* @font-face {
+    font-family: font1;
+    src: url(/fonts/HelveticaNowDisplayMedium.2b4c3aa1d0..woff2);
+} */
+
+
+@font-face {
+    font-family: "font1";
+    src: url("/fonts/HelveticaNowDisplayMedium.2b4c3aa1d0..woff2") format("woff2");
+}
+
+
+@font-face {
+    font-family: "font2";
+    src: url("/fonts/HelveticaNowText.d201766e67..woff2") format("woff2");
+}
+
+
+
+@font-face {
+    font-family: "font3";
+    src: url("/fonts/HelveticaNowTextMedium.f5fb356d61..woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "font4";
+    src: url("/fonts/Nike-Futura-ot-300.083711e2b8..woff2") format("woff2");
+}
