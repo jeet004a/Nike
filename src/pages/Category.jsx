@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import NavBar from '../components/SignUp/NavBar'
 import { useParams, useNavigate } from 'react-router-dom'
 import { IoClose, IoChevronDown, IoChevronUp, IoGridOutline } from 'react-icons/io5'
@@ -6,24 +6,21 @@ import { BsSliders2 } from 'react-icons/bs'
 import { TbAdjustmentsHorizontal } from 'react-icons/tb'
 import { IoIosHeartEmpty, IoIosHeart } from 'react-icons/io'
 import FilterAccordion from '../components/Category/FilterAccordion'
-import { allProducts } from '../data/products'
-
-// ─── Filter Config ─────────────────────────────────────────────────────────────
-const filterSections = [
-  { id: 'gender',   label: 'Gender',   options: ['Men', 'Women', 'Unisex'] },
-  { id: 'category', label: 'Category', options: ['Shoes', 'Tops', 'Hoodies', 'Bottoms', 'Accessories'] },
-  { id: 'price',    label: 'Price',    options: ['Under ₹1,999', '₹2,000 – ₹4,999', '₹5,000 – ₹9,999', '₹10,000 & Above'] },
-  { id: 'size',     label: 'Size',     options: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '6', '7', '8', '9', '10', '11'] },
-  { id: 'color',    label: 'Colour',   options: ['Black', 'White', 'Grey', 'Red', 'Blue', 'Green', 'Yellow'] },
-]
+import { getAllProducts } from '../api/Product/product.Api'
+import { useWishList } from '../context/WishListContext'
+// ─── Static price range buckets (not data-driven) ──────────────────────────────
+const PRICE_RANGES = ['Under ₹1,999', '₹2,000 – ₹4,999', '₹5,000 – ₹9,999', '₹10,000 & Above']
 
 const sortOptions = ['Featured', 'Newest', 'Price: High-Low', 'Price: Low-High']
 
 // ─── Product Card ──────────────────────────────────────────────────────────────
 const ProductCard = ({ product }) => {
+  // console.log('kk', product)
+
   const navigate = useNavigate()
   const [wishlisted, setWishlisted] = useState(false)
-  const [hovered, setHovered]       = useState(false)
+  // const { wishListItems, setWishlistItems, removeFromWishList } = useWishList()
+  const [hovered, setHovered] = useState(false)
 
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -34,12 +31,12 @@ const ProductCard = ({ product }) => {
       className="group relative cursor-pointer"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={() => navigate(`/product/${product.id}`)}
+      onClick={() => navigate(`/product/${product._id}`)}
     >
       {/* Image */}
       <div className="relative overflow-hidden bg-[#F5F5F5] rounded-xl aspect-square">
         <img
-          src={product.image}
+          src={product.thumbnail}
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
@@ -47,22 +44,29 @@ const ProductCard = ({ product }) => {
         {/* Badge */}
         {product.badge && (
           <span className={`absolute top-3 left-3 px-2.5 py-0.5 text-[11px] font-semibold rounded-full
-            ${product.badge === 'Sale'       ? 'bg-red-500 text-white'  :
+            ${product.badge === 'Sale' ? 'bg-red-500 text-white' :
               product.badge === 'Bestseller' ? 'bg-orange-400 text-white' :
-                                               'bg-black text-white'}`}>
+                'bg-black text-white'}`}>
             {product.badge}
           </span>
         )}
 
         {/* Wishlist */}
         <button
-          onClick={(e) => { e.stopPropagation(); setWishlisted(!wishlisted) }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setWishlisted(!wishlisted)
+            // setWishlistItems()
+            // console.log(wishlisted)
+          }}
           className="absolute top-3 right-3 p-1.5 rounded-full bg-white/80 backdrop-blur-sm
             opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110"
         >
-          {wishlisted
-            ? <IoIosHeart className="text-xl text-red-500" />
-            : <IoIosHeartEmpty className="text-xl text-black" />}
+          {
+            wishlisted
+              // wishListItems
+              ? <IoIosHeart className="text-xl text-red-500" />
+              : <IoIosHeartEmpty className="text-xl text-black" />}
         </button>
 
         {/* Quick Add */}
@@ -102,10 +106,59 @@ const ProductCard = ({ product }) => {
 const Category = () => {
   const { category } = useParams()
   const [selectedFilters, setSelectedFilters] = useState({})
-  const [sortBy, setSortBy]                   = useState('Featured')
-  const [sidebarOpen, setSidebarOpen]         = useState(true)
+  const [sortBy, setSortBy] = useState('Featured')
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
-  const [activeChips, setActiveChips]         = useState([])
+  const [activeChips, setActiveChips] = useState([])
+
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function getall() {
+      try {
+        const response = await getAllProducts()
+        setData(response.data)
+      } catch (err) {
+        console.error('Failed to fetch products', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    getall()
+  }, [])
+
+  // ── Derive filter sections dynamically from fetched data ──────────────────────
+  const filterSections = useMemo(() => {
+    if (!data.length) return []
+
+    const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
+
+    const unique = (arr) => [...new Set(arr.filter(Boolean))]
+
+    const genders = unique(data.map(p => p.gender)).map(capitalize)
+    const categories = unique(data.map(p => p.category)).map(capitalize)
+    const colors = unique(data.map(p => p.color))
+
+    // Sizes: flatten all sizes arrays and sort (numbers first, then strings)
+    const allSizes = unique(data.flatMap(p => p.sizes ?? []))
+    // const numericSizes = allSizes.filter(s => !isNaN(s)).sort((a, b) => Number(a) - Number(b))
+    const clothingSizes = allSizes.filter(s => isNaN(s))
+    const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+    const numericSizes = ['6', '7', '8', '9', '10', '11']
+    const sortedClothing = clothingSizes.sort((a, b) => sizeOrder.indexOf(a) - sizeOrder.indexOf(b))
+    const sizes = [...sortedClothing, ...numericSizes.map(String)]
+
+    return [
+      { id: 'gender', label: 'Gender', options: genders },
+      { id: 'category', label: 'Category', options: categories },
+      { id: 'price', label: 'Price', options: PRICE_RANGES },
+      { id: 'size', label: 'Size', options: sizes },
+      { id: 'color', label: 'Colour', options: colors },
+    ]
+  }, [data])
+
+  // console.log(data[0])
 
   const title = category
     ? category.charAt(0).toUpperCase() + category.slice(1)
@@ -114,7 +167,7 @@ const Category = () => {
   const toggleFilter = (sectionId, option) => {
     setSelectedFilters(prev => {
       const current = prev[sectionId] || []
-      const updated  = current.includes(option)
+      const updated = current.includes(option)
         ? current.filter(v => v !== option)
         : [...current, option]
       return { ...prev, [sectionId]: updated }
@@ -138,34 +191,55 @@ const Category = () => {
   const clearAll = () => setSelectedFilters({})
 
   // ── Filter & Sort ──
-  const filteredProducts = allProducts
-    .filter(p => {
-      if (selectedFilters.gender?.length &&
-        !selectedFilters.gender.map(g => g.toLowerCase()).includes(p.gender)) return false
-      if (selectedFilters.category?.length &&
-        !selectedFilters.category.map(c => c.toLowerCase()).includes(p.category)) return false
-      if (selectedFilters.price?.length) {
-        const inRange = selectedFilters.price.some(range => {
-          if (range === 'Under ₹1,999')        return p.price < 2000
-          if (range === '₹2,000 – ₹4,999')    return p.price >= 2000 && p.price <= 4999
-          if (range === '₹5,000 – ₹9,999')    return p.price >= 5000 && p.price <= 9999
-          if (range === '₹10,000 & Above')     return p.price >= 10000
-          return true
-        })
-        if (!inRange) return false
-      }
-      return true
-    })
-    .sort((a, b) => {
-      if (sortBy === 'Price: High-Low') return b.price - a.price
-      if (sortBy === 'Price: Low-High') return a.price - b.price
-      if (sortBy === 'Newest')          return b.id - a.id
-      return 0
-    })
+  const filteredProducts = useMemo(() => {
+    return data
+      .filter(p => {
+        // Gender filter
+        if (selectedFilters.gender?.length &&
+          !selectedFilters.gender.map(g => g.toLowerCase()).includes(p.gender?.toLowerCase()))
+          return false
+
+        // Category filter
+        if (selectedFilters.category?.length &&
+          !selectedFilters.category.map(c => c.toLowerCase()).includes(p.category?.toLowerCase()))
+          return false
+
+        // Price filter
+        if (selectedFilters.price?.length) {
+          const inRange = selectedFilters.price.some(range => {
+            if (range === 'Under ₹1,999') return p.price < 2000
+            if (range === '₹2,000 – ₹4,999') return p.price >= 2000 && p.price <= 4999
+            if (range === '₹5,000 – ₹9,999') return p.price >= 5000 && p.price <= 9999
+            if (range === '₹10,000 & Above') return p.price >= 10000
+            return true
+          })
+          if (!inRange) return false
+        }
+
+        // Size filter
+        if (selectedFilters.size?.length &&
+          !selectedFilters.size.some(s => p.sizes?.map(String).includes(String(s))))
+          return false
+
+        // Colour filter
+        if (selectedFilters.color?.length &&
+          !selectedFilters.color.some(c => p.color?.toLowerCase().includes(c.toLowerCase())))
+          return false
+
+        return true
+      })
+      .sort((a, b) => {
+        if (sortBy === 'Price: High-Low') return b.price - a.price
+        if (sortBy === 'Price: Low-High') return a.price - b.price
+        if (sortBy === 'Newest') return new Date(b.createdAt) - new Date(a.createdAt)
+        return 0
+      })
+  }, [data, selectedFilters, sortBy])
+
 
   return (
     <div className="min-h-screen bg-white">
-      <NavBar />
+      {/* <NavBar /> */}
 
       {/* ── Page Header ── */}
       <div className="px-6 lg:px-10 pt-6 pb-3 border-b border-gray-200">
@@ -248,7 +322,12 @@ const Category = () => {
 
         {/* Grid */}
         <main className="flex-1 px-6 lg:px-8 py-6">
-          {filteredProducts.length === 0 ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-32 gap-4">
+              <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin" />
+              <p className="text-gray-400 text-sm">Loading products…</p>
+            </div>
+          ) : filteredProducts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-32 gap-4">
               <IoGridOutline className="text-6xl text-gray-300" />
               <p className="text-gray-500 text-base">No products match your filters.</p>
@@ -265,7 +344,7 @@ const Category = () => {
                 ? 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
                 : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'}`}>
               {filteredProducts.map(product => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product._id} product={product} />
               ))}
             </div>
           )}

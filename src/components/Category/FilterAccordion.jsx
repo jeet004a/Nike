@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { IoClose, IoChevronDown, IoChevronUp, IoGridOutline } from 'react-icons/io5'
 const FilterAccordion = ({ section, selectedFilters, onToggle }) => {
     const [open, setOpen] = useState(true)
+    // console.log(section.options)
     return (
         <div className="border-b border-gray-200 py-4">
             <button

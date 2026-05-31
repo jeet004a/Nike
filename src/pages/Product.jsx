@@ -16,13 +16,19 @@ import { MdOutlineLocalShipping } from 'react-icons/md'
 import ProductCardMini from '../components/Product/ProductCardMini'
 import StarRating from '../components/Product/StarRating'
 import Accordion from '../components/Product/Accordion'
-
+import { getProductById } from '../api/Product/product.Api'
+import { useCart } from '../context/CartContent'
+import { useWishList } from '../context/WishListContext'
 
 // ─── Main Product Page ──────────────────────────────────────────────────────────
 const Product = () => {
+
     const { id } = useParams()
+    const { cartItems, addToCart, setBagTotal, bagTotal, Totalamount, setTotalAmount } = useCart()
+    const { wishListItems, setWishlistItems, addToWishList, removeFromWishList } = useWishList()
+
     const navigate = useNavigate()
-    const product = allProducts.find(p => p.id === Number(id))
+    // const product = allProducts.find(p => p.id === Number(id))
 
     const [activeImg, setActiveImg] = useState(0)
     const [selectedSize, setSelectedSize] = useState(null)
@@ -31,6 +37,19 @@ const Product = () => {
     const [sizeError, setSizeError] = useState(false)
     const [showSizeGuide, setShowSizeGuide] = useState(false)
     const relatedRef = useRef(null)
+    const [product, setProduct] = useState(null)
+    const [cartProduct, setCartProduct] = useState(null)
+    useEffect(() => {
+        const getData = async () => {
+            const response = await getProductById(id)
+            // console.log(response)
+            setProduct(response.data)
+        }
+
+        getData()
+    })
+
+    // console.log(product)
 
     useEffect(() => {
         window.scrollTo(0, 0)
@@ -38,12 +57,17 @@ const Product = () => {
         setSelectedSize(null)
         setAddedToBag(false)
         setSizeError(false)
+        for (let i of wishListItems) {
+            if (i._id == id) {
+                setWishlisted(true)
+            }
+        }
     }, [id])
 
     if (!product) {
         return (
             <div className="min-h-screen bg-white flex flex-col">
-                <NavBar />
+                {/* <NavBar /> */}
                 <div className="flex-1 flex flex-col items-center justify-center gap-4">
                     <p className="text-2xl font-bold text-gray-300">Product not found</p>
                     <button onClick={() => navigate(-1)} className="bg-black text-white px-6 py-2.5 rounded-full text-sm">
@@ -61,11 +85,19 @@ const Product = () => {
         ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
         : null
 
-    const handleAddToBag = () => {
+    const handleAddToBag = (e) => {
         if (!selectedSize) { setSizeError(true); return }
         setSizeError(false)
         setAddedToBag(true)
         setTimeout(() => setAddedToBag(false), 2500)
+        // console.log('Added to bag clicked', product)
+        product.selectSize = selectedSize
+        addToCart(product)
+
+        let total = bagTotal + product.price
+        setBagTotal(total)
+        setTotalAmount(total)
+
     }
 
     const scrollRelated = (dir) => {
@@ -76,7 +108,7 @@ const Product = () => {
 
     return (
         <div className="min-h-screen bg-white">
-            <NavBar />
+            {/* <NavBar /> */}
 
             {/* ── Breadcrumb ── */}
             <nav className="px-6 lg:px-12 py-3 text-xs text-gray-500 flex items-center gap-1.5">
@@ -281,7 +313,17 @@ const Product = () => {
                         </button>
 
                         <button
-                            onClick={() => setWishlisted(!wishlisted)}
+                            onClick={() => {
+                                setWishlisted(!wishlisted)
+                                if (!wishlisted) {
+                                    addToWishList(product)
+                                }
+
+                                if (wishlisted) {
+                                    removeFromWishList(product._id)
+                                }
+
+                            }}
                             className="w-full py-4 rounded-full border border-gray-300 text-sm font-semibold tracking-wide
                 hover:border-black transition-all duration-200 flex items-center justify-center gap-2"
                         >

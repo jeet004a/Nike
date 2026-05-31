@@ -34,3 +34,14 @@ body {
     font-family: "font4";
     src: url("/fonts/Nike-Futura-ot-300.083711e2b8..woff2") format("woff2");
 }
+
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
