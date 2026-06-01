@@ -16,6 +16,7 @@ import Cart from './components/Cart/Cart'
 import { useCart } from './context/CartContent'
 import Payment from './pages/Payment'
 import WishList from './components/WishList/WishList'
+import OrderAddress from './components/Payment/OrderAddress'
 
 function App() {
   // const [count, setCount] = useState(0)
@@ -53,6 +54,8 @@ function App() {
         <Route path='/signup' element={<SignUp />} />
         <Route path='/signin' element={<Signin />} />
         <Route path='/payment' element={<Payment />} />
+        {/* <Route path='/address' element={<OrderAddress />} /> */}
+
       </Routes>
     </div>
   )

@@ -2,14 +2,19 @@ import React from 'react'
 import { useCart } from '../../context/CartContent'
 import { RiDeleteBinLine } from "react-icons/ri";
 import { CiCirclePlus } from "react-icons/ci";
+import { Link } from 'react-router-dom';
+import CartWarning from './CartWarning';
 const Cart = () => {
     const { cartItems, bagTotal,
         setBagTotal,
         discountMRP,
         setDiscountMRP, setCartItems, Totalamount, setTotalAmount, discountFlag, setDiscountFlag } = useCart()
 
-    // console.log('hello from cart service ', cartItems)
+    if (cartItems.length === 0) {
+        return <CartWarning />;
+    }
     return (
+
         <div className='w-full h-full  flex  justify-around absolute'>
             {/* bg-red-500 */}
             <div className=' mt-20 w-[50%]'>
@@ -119,13 +124,16 @@ const Cart = () => {
                     </div>
                     <div className='flex items-center justify-between mt-3'>
                         <h1>Shipping Charges:</h1>
-                        <h1>Free</h1>
+                        <h1 className='text-green-500'>Free</h1>
                     </div>
                     <div className='flex items-center justify-between mt-3'>
                         <h1>You Pay:</h1>
                         <h1>₹ {Totalamount}</h1>
                     </div>
-                    <button className='w-full h-[4vw] bg-black mt-4 text-white rounded-full cursor-pointer'>Proceed to Pay</button>
+                    <button className='w-full h-[4vw] bg-black mt-4 text-white rounded-full cursor-pointer'>
+                        <Link to='/payment' >Proceed to Pay</Link>
+                    </button>
+
                 </div>
 
             </div>

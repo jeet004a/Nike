@@ -1,7 +1,11 @@
 import React from 'react'
 import { useAuth } from '../../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
+import { useCart } from '../../context/CartContent'
 
 const PaymentNav = () => {
+
+    const navigate = useNavigate()
     const { user } = useAuth()
     if (user) {
         console.log('x')

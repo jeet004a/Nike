@@ -10,6 +10,21 @@ export const CartProvider = ({ children }) => {
     const [Totalamount, setTotalAmount] = useState(0)
     const [discountFlag, setDiscountFlag] = useState(false)
 
+    useEffect(() => {
+        const total = cartItems.reduce((acc, item) => acc + (item.price * (item.count || 1)), 0);
+        setBagTotal(total);
+        
+        if (total > 20000) {
+            setDiscountMRP(1000);
+            setTotalAmount(total - 1000);
+            setDiscountFlag(true);
+        } else {
+            setDiscountMRP(0);
+            setTotalAmount(total);
+            setDiscountFlag(false);
+        }
+    }, [cartItems]);
+
     const addToCart = (product) => {
         product.count = product.count ? product.count + 1 : 1
 

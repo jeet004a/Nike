@@ -4,7 +4,7 @@ import OrderAddress from '../components/Payment/OrderAddress'
 
 const Payment = () => {
 
-    console.log(localStorage.user)
+    // console.log(localStorage.user)
     return (
         <div className='w-screen h-screen'>
             <PaymentNav />

@@ -1,6 +1,7 @@
 import React from 'react'
 import { useCart } from '../../context/CartContent'
 import { useWishList } from '../../context/WishListContext'
+import WishListWarning from './WishListWarning'
 
 const WishList = () => {
     const { cartItems, bagTotal,
@@ -12,6 +13,11 @@ const WishList = () => {
     // console.log(wishListItems)   
 
     // console.log(cartItems)
+    if (wishListItems.length == 0) {
+        return (
+            <WishListWarning />
+        )
+    }
     return (
         <div className='w-full h-full  flex  justify-around  '>
             {/* bg-red-500 */}
